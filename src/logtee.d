@@ -1,24 +1,20 @@
 #!/usr/bin/env rdmd
-import std.stdio;
+import std.stdio : File, stdout, write, writeln;
 import std.getopt;
 import core.time : dur;
 import std.process : Redirect, pipeProcess, wait, Pid;
-import std.datetime;
-import std.array;
-import std.string;
+import std.datetime : Clock;
+import std.string : empty, split, startsWith;
 import std.json : parseJSON, JSONValue;
-import core.stdc.signal : signal, SIGTERM, SIGSEGV, SIGINT, SIGILL, SIGFPE, SIGABRT;
+import core.stdc.signal : signal, SIGTERM;
 
 /**
   TODO:
-  forward sigterm
-  ldc2 - static binary
   mongo?
   pv
   github workflow
   stderr
   stdin an Program weiterleiten
-
 */
 
 void onLine(T)(T line, File forwarder)
@@ -78,23 +74,22 @@ int main(string[] args)
         stdout.writefln!`{"timestamp": "%s", "message": "start"}`(Clock.currTime().toISOExtString);
     }
 
-    auto pipes = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
-    childPid = pipes.pid.processID;
+    auto child = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
+    childPid = child.pid.processID;
 
     auto forwarder = pipeProcess(forwardTo.split(' '), Redirect.stdin);
     forwarderPid = forwarder.pid.processID;
 
     SIGTERM.signal(&signalHandler);
-    //forwarder.stdin.write("abc");
 
-    foreach (line; pipes.stdout.byLineCopy)
+    foreach (line; child.stdout.byLineCopy)
     {
         stdout.write(line);
         onLine(line, forwarder.stdin);
     }
-    return pipes.pid.wait;
+    return child.pid.wait;
     scope (exit)
     {
-        pipes.pid.wait;
+        child.pid.wait;
     }
 }

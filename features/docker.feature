@@ -1,6 +1,6 @@
 Feature: Docker
 
-  Scenario:
+  Scenario: Usage
     Given a dockerfile stage with
       """
       FROM dlanguage/dmd
@@ -15,12 +15,27 @@ Feature: Docker
       please provide a 'log_filter' file to filter the logs.
       """
 
-  Scenario: Data Ingestion
+  Scenario: Static binary
     Given a customized logging filter is configured like
       """
-      import std.stdio : stdout;
+      forwarder.writeln("customized");
+      """
+    Given a dockerfile stage with
+      """
+      FROM dlanguage/ldc
 
-      stdout.writeln("customized");
+      COPY src/ /work
+      COPY log_filter /work
+      WORKDIR /work
+      RUN ldc2 logtee.d -J. -static
+      """
+    When building the docker image
+    Then there is a binary under /work/logtee
+
+  Scenario: Log filter
+    Given a customized logging filter is configured like
+      """
+      forwarder.writeln("customized");
       """
     Given a dockerfile stage with
       """
@@ -29,7 +44,7 @@ Feature: Docker
       COPY src/ /work
       COPY log_filter /work
       WORKDIR /work
-      RUN dmd -J. *.d -oflogtee
+      RUN dmd -J. logtee.d -oflogtee
       """
     When building the docker image
     Then there is a binary under /work/logtee
