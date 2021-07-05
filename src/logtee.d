@@ -9,8 +9,6 @@ import std.string;
 import std.json : parseJSON, JSONValue;
 import core.stdc.signal : signal, SIGTERM, SIGSEGV, SIGINT, SIGILL, SIGFPE, SIGABRT;
 
-//import core.sys.posix.signal : kill;
-
 /**
   TODO:
   forward sigterm
@@ -23,14 +21,15 @@ import core.stdc.signal : signal, SIGTERM, SIGSEGV, SIGINT, SIGILL, SIGFPE, SIGA
 
 */
 
-void onLine(T)(T line)
+void onLine(T)(T line, File forwarder)
 {
     if (!line.startsWith('{'))
     {
         return;
     }
 
-    static if (!__traits(compiles, import("log_filter"))) {
+    static if (!__traits(compiles, import("log_filter")))
+    {
         pragma(msg, "please provide a 'log_filter' file to filter the logs.");
         static assert(false, "no customized filter defined");
     }
@@ -39,27 +38,33 @@ void onLine(T)(T line)
 }
 
 __gshared int childPid = 0;
+__gshared int forwarderPid = 0;
 
-extern (C) void handler(int num) nothrow @nogc @system
+extern (C) void signalHandler(int num) nothrow @nogc @system
 {
-    assert(childPid != 0);
-    version (Posix)
+    foreach (pid; [childPid, forwarderPid])
     {
-        import core.sys.posix.signal : kill;
+        assert(pid != 0);
+        version (Posix)
+        {
+            import core.sys.posix.signal : kill;
 
-        childPid.kill(num);
-    }
-    else
-    {
-        static assert(false, "not supported");
+            pid.kill(num);
+        }
+        else
+        {
+            static assert(false, "not supported");
+        }
     }
 }
 
 int main(string[] args)
 {
     bool plotStart = false;
+    string forwardTo;
 
-    auto options = getopt(args, "plotStart", &plotStart);
+    auto options = getopt(args, "plotStart", &plotStart, std.getopt.config.required,
+            "forwarder", "where to forward filtered events to", &forwardTo);
     string[] extraArgs = args[1 .. $];
 
     if (options.helpWanted || extraArgs.empty)
@@ -76,17 +81,16 @@ int main(string[] args)
     auto pipes = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
     childPid = pipes.pid.processID;
 
-/*
-    auto forwarder = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
-    childPid = pipes.pid.processID;
-*/
+    auto forwarder = pipeProcess(forwardTo.split(' '), Redirect.stdin);
+    forwarderPid = forwarder.pid.processID;
 
-    signal(SIGTERM, &handler);
+    SIGTERM.signal(&signalHandler);
+    //forwarder.stdin.write("abc");
 
     foreach (line; pipes.stdout.byLineCopy)
     {
         stdout.write(line);
-        onLine(line);
+        onLine(line, forwarder.stdin);
     }
     return pipes.pid.wait;
     scope (exit)

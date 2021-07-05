@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+
+dfmt -i src/*.d
+black */*.py */*/*.py
+ls -1 features/*.feature| xargs -I {} docker run --rm -v $(pwd):/work gherkin/format --replace /work/{} --verbose

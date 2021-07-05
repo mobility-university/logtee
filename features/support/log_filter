@@ -1,3 +1,1 @@
-import std.stdio : stdout;
-
-stdout.writeln("custom json filter");
+forwarder.writeln("custom json filter");
