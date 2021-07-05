@@ -21,13 +21,13 @@ Feature: Forwards
       | sig term |
       | sig kill |
 
-  Scenario:
+  Scenario: forwarder
      When I start "/work/logtee --forward 'cat - > foo.json' -- echo {}"
      Then I get
       """
       {}
       """
-    And I get foo.json
+    And I get logs.json
       """
       huhu
       """

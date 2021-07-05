@@ -28,7 +28,8 @@ void onLine(T)(T line)
     {
         import std.json;
 
-        static if(__traits(compiles, import user_specific: onLineJson)) {
+
+        static if(__traits(compiles, foo)) {
             import user_specific: onLineJson;
             auto json = line.parseJSON;
             //json
@@ -79,13 +80,13 @@ int main(string[] args)
         stdout.writefln!`{"timestamp": "%s", "message": "start"}`(Clock.currTime().toISOExtString);
     }
 
+    writeln(extraArgs);
+
     auto pipes = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
     childPid = pipes.pid.processID;
 
-/*
     auto forwarder = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
     childPid = pipes.pid.processID;
-*/
 
     signal(SIGTERM, &handler);
 

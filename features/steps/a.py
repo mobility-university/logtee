@@ -91,6 +91,7 @@ def check_binary(context, path):
 
 @then("I get")
 def assert_output(context):
+    print(context.output)
     actual = context.output.strip("\n").strip("\r")
     expected = context.text.strip("\n").strip("\r")
     assert re.match(expected, actual), f"'{expected}' != '{actual}'"

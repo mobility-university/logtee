@@ -65,9 +65,11 @@ extern (C) void handler(int num) nothrow @nogc @system
 int main(string[] args)
 {
     bool plotStart = false;
+    bool forward = false;
 
-    auto options = getopt(args, "plotStart", &plotStart);
+    auto options = getopt(args, "plotStart", &plotStart, "forward", &forward);
     string[] extraArgs = args[1 .. $];
+    string extraArgs2;
 
     if (options.helpWanted || extraArgs.empty)
     {
@@ -80,13 +82,18 @@ int main(string[] args)
         stdout.writefln!`{"timestamp": "%s", "message": "start"}`(Clock.currTime().toISOExtString);
     }
 
+    if (forward) {
+        extraArgs2 = extraArgs[0];
+        writeln(extraArgs2);
+        auto forwarder = pipeProcess(extraArgs2, Redirect.stdout | Redirect.stderrToStdout);
+        childPid = forwarder.pid.processID;
+    }
+    extraArgs = extraArgs[1 .. $];
+    writeln(extraArgs);
+
     auto pipes = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
     childPid = pipes.pid.processID;
 
-/*
-    auto forwarder = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
-    childPid = pipes.pid.processID;
-*/
 
     signal(SIGTERM, &handler);
 
