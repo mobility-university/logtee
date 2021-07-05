@@ -1,0 +1,7 @@
+#!/bin/sh
+trap 'echo received HUP signal' HUP
+trap 'echo received INT signal' INT
+# trap 'echo different trap for the KILL signal' KILL
+trap 'echo received TERM signal' TERM
+
+read
