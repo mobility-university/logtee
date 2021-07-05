@@ -1,18 +1,18 @@
 Feature: Forwards
 
   Scenario: stdout
-    When I start "/work/logtee -- echo hello world"
+    When I start "rdmd -Jfeatures/support/ src/logtee.d -- echo hello world"
     Then I get
       """
       hello world
       """
 
   Scenario: exit code
-    When I start "/work/logtee -- false"
+    When I start "rdmd -Jfeatures/support/ src/logtee.d -- false"
     Then it fails
 
   Scenario Outline: signals
-    Given "src/logtee.d --plotStart -- features/support/print_signal" is started
+    Given "rdmd -Jfeatures/support/ src/logtee.d --plotStart -- features/support/print_signal" is started
     When <signal> is sent
     Then the program stops
 

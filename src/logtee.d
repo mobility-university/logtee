@@ -6,6 +6,7 @@ import std.process : Redirect, pipeProcess, wait, Pid;
 import std.datetime;
 import std.array;
 import std.string;
+import std.json : parseJSON, JSONValue;
 import core.stdc.signal : signal, SIGTERM, SIGSEGV, SIGINT, SIGILL, SIGFPE, SIGABRT;
 
 //import core.sys.posix.signal : kill;
@@ -24,28 +25,29 @@ import core.stdc.signal : signal, SIGTERM, SIGSEGV, SIGINT, SIGILL, SIGFPE, SIGA
 
 void onLine(T)(T line)
 {
-    if (line.startsWith('{'))
+    if (!line.startsWith('{'))
     {
-        /*import user_specific;
-        json
-        static assert (compiles(onLineJson(json))) + Hilfe
-        onLineJson(json);*/
-        stdout.writefln("json");
+        return;
     }
+
+    static if (!__traits(compiles, import("log_filter"))) {
+        pragma(msg, "please provide a 'log_filter' file to filter the logs.");
+        static assert(false, "no customized filter defined");
+    }
+    auto json = line.parseJSON;
+    mixin(import("log_filter"));
 }
 
 __gshared int childPid = 0;
 
 extern (C) void handler(int num) nothrow @nogc @system
 {
-    printf("Caught signal %d\n", num);
     assert(childPid != 0);
     version (Posix)
     {
         import core.sys.posix.signal : kill;
 
         childPid.kill(num);
-        // while (true) {}
     }
     else
     {

@@ -10,23 +10,26 @@ Feature: Docker
       RUN dmd logtee.d
       """
     When building the docker image
-    Then there is a binary under /work/logtee
+    Then it fails with
+      """
+      please provide a 'log_filter' file to filter the logs.
+      """
 
   Scenario: Data Ingestion
-    Given a user specific logging
+    Given a customized logging filter is configured like
       """
-      void onLineJson(JSONValue value) {
-        stdout.writeln("huhu");
-      }
+      import std.stdio : stdout;
+
+      stdout.writeln("customized");
       """
     Given a dockerfile stage with
       """
       FROM dlanguage/dmd
 
       COPY src/ /work
-      COPY user_specific.d /work
+      COPY log_filter /work
       WORKDIR /work
-      RUN dmd logtee.d user_specific.d
+      RUN dmd -J. *.d -oflogtee
       """
     When building the docker image
     Then there is a binary under /work/logtee

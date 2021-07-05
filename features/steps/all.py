@@ -1,5 +1,5 @@
 from behave import given, then, when
-from subprocess import Popen, check_call, check_output, PIPE, TimeoutExpired
+from subprocess import run, Popen, check_call, check_output, PIPE, TimeoutExpired
 import re
 from signal import SIGTERM, SIGKILL
 
@@ -16,67 +16,44 @@ def define_dockerfile(context):
 @given('"{process}" is started')
 def start_process(context, process):
 
-    context.process = Popen(
-        [] #["docker", "run", "-v", "./features/support:/support", "--rm", "-ti", IMAGE]
-        + process.split(" "), stdout=PIPE, # stdin=PIPE, shell=False, #bufsize=0
-    )
-
-    import time
-    time.sleep(5)
-    
+    context.process = Popen(process.split(" "), stdout=PIPE)
     try:
-        print(context.process.communicate(timeout=.5))
         context.process.wait(timeout=.5)
-        #assert False
     except TimeoutExpired:
         ...
     assert context.process.returncode is None, context.process.returncode
-    #assert False
 
+
+@given('a customized logging filter is configured like')
+def write_customized_logging(context):
+    with open('build/log_filter', 'w') as file:
+        file.write(context.text)
 
 @when("building the docker image")
 def building_image(context):
-    check_call(["docker", "build", f"--tag={IMAGE}", "build", "--quiet"])
+    context.output = run(["docker", "build", f"--tag={IMAGE}", "--quiet", "build"], capture_output=True)
 
 
 @when('I start "{command}"')
-def run(context, command):
-    # TODO: how to build?
+def run_command(context, command):
     try:
-        context.output = check_output(
-            ["docker", "run", "--rm", "-ti", IMAGE] + command.split(" ")
-        ).decode("utf-8")
+        context.output = check_output(command.split(" ")).decode("utf-8")
     except Exception as exception:
         context.output = exception
 
 
 @when("{signal} is sent")
 def send_signal(context, signal):
-
-    import time
-    time.sleep(5)
-    try:
-        print(context.process.communicate(input=''.encode('utf-8'), timeout=.5))
-    except TimeoutExpired:
-        ...
     context.process.send_signal({"sig term": SIGTERM, "sig kill": SIGKILL}[signal])
 
 
 @then("the program stops")
 def assert_stops(context):
-    # context.process.wait()
-    import time
-    time.sleep(5)
-    #print(context.process.stdout.read())
     try:
         print(context.process.communicate(input=''.encode('utf-8'), timeout=.5))
     except TimeoutExpired:
         ...
-    print(context.process.returncode)
-    print(SIGTERM)
-    # TODO: output!?
     assert context.process.returncode != 0, context.process.returncode 
-    #assert False
 
 
 @then("there is a binary under {path}")
@@ -94,3 +71,14 @@ def assert_output(context):
 @then("it fails")
 def assert_exception(context):
     assert isinstance(context.output, Exception)
+
+
+
+@then("it fails with")
+def assert_fails_with(context):
+    print(context.output.stdout.decode('utf-8'))
+    print('#####')
+    print(context.output.stderr.decode('utf-8'))
+    assert context.output.returncode != 0
+    assert context.text in context.output.stderr.decode('utf-8')
+    # assert isinstance(context.output, Exception)
