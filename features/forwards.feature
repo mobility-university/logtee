@@ -20,3 +20,14 @@ Feature: Forwards
       | signal   |
       | sig term |
       | sig kill |
+
+  Scenario:
+     When I start "/work/logtee --forward 'cat - > foo.json' -- echo {}"
+     Then I get
+      """
+      {}
+      """
+    And I get foo.json
+      """
+      huhu
+      """

@@ -34,6 +34,11 @@ def start_process(context, process):
     #assert False
 
 
+@given('a user specific logging')
+def user_specific_logging(context):
+    with open("build/user_specific.d", "w") as file:
+        file.write(context.text)
+
 @when("building the docker image")
 def building_image(context):
     check_call(["docker", "build", f"--tag={IMAGE}", "build", "--quiet"])

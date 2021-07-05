@@ -28,8 +28,7 @@ void onLine(T)(T line)
     {
         import std.json;
 
-
-        static if(__traits(compiles, foo)) {
+        static if(__traits(compiles, import user_specific: onLineJson)) {
             import user_specific: onLineJson;
             auto json = line.parseJSON;
             //json
