@@ -26,7 +26,7 @@ void onLine(T)(T line, File forwarder)
 
     static if (!__traits(compiles, import("log_filter")))
     {
-        pragma(msg, "please provide a 'log_filter' file to filter the logs.");
+        pragma(msg, "'log_filter' file is either not present or cannot be compiled.");
         static assert(false, "no customized filter defined");
     }
     auto json = line.parseJSON;
@@ -77,8 +77,11 @@ int main(string[] args)
     auto child = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
     childPid = child.pid.processID;
 
+    writeln(forwardTo.split(' '));
+
     auto forwarder = pipeProcess(forwardTo.split(' '), Redirect.stdin);
     forwarderPid = forwarder.pid.processID;
+    writeln(forwarder.stdin); 
 
     SIGTERM.signal(&signalHandler);
 
