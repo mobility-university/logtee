@@ -31,3 +31,8 @@ Feature: Forwards
       | signal   |
       | sig term |
       | sig kill |
+
+  Scenario: import into mongo
+    Given I started the mongo db
+    When I start "rdmd -Jfeatures/support/mongo src/logtee.d --forwarder features/support/mongo/forward -- echo {}"
+    Then the line is inserted into mongo

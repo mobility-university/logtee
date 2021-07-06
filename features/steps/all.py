@@ -29,6 +29,9 @@ def write_customized_logging(context):
     with open("build/log_filter", "w") as file:
         file.write(context.text)
 
+@given("I started the mongo db")
+def start_mongo(_):
+    check_call(["sh", "-c", "docker-compose down; docker-compose up -d"])
 
 @when("building the docker image")
 def building_image(context):
@@ -88,3 +91,7 @@ def assert_exception(context):
 def assert_fails_with(context):
     assert context.output.returncode != 0
     assert context.text in context.output.stderr.decode("utf-8")
+
+@then("the line is inserted into mongo")
+def assert_insert_into_mongo(_):
+    check_call(["docker", "exec", "mongodb", "mongo", "journaling", "--quiet", "--eval", "assert(db.collection.count({'key':'value'}) == 1)"])

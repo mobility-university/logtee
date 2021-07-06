@@ -1,0 +1,3 @@
+#!/bin/sh
+
+docker exec -i mongodb mongoimport --db journaling --collection collection

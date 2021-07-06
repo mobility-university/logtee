@@ -1,0 +1,16 @@
+version: '3.3'
+services:
+
+  mongodb:
+    image: mongo
+    restart: always
+    container_name: mongodb
+    hostname: mongodb
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_DATABASE: journaling
+    healthcheck:
+      test: test $$(echo "db.stats().ok" | mongo --quiet) -eq 1
+      interval: 10s
+      start_period: 30s
