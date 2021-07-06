@@ -77,11 +77,8 @@ int main(string[] args)
     auto child = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
     childPid = child.pid.processID;
 
-    writeln(forwardTo.split(' '));
-
     auto forwarder = pipeProcess(forwardTo.split(' '), Redirect.stdin);
     forwarderPid = forwarder.pid.processID;
-    writeln(forwarder.stdin); 
 
     SIGTERM.signal(&signalHandler);
 

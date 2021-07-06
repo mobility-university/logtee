@@ -90,7 +90,7 @@ def assert_exception(context):
 @then("it fails with")
 def assert_fails_with(context):
     assert context.output.returncode != 0
-    assert context.text in context.output.stderr.decode("utf-8")
+    assert context.text in context.output.stderr.decode("utf-8"), context.output.stderr.decode("utf-8")
 
 @then("the line is inserted into mongo")
 def assert_insert_into_mongo(_):

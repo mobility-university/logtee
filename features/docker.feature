@@ -12,7 +12,7 @@ Feature: Docker
     When building the docker image
     Then it fails with
       """
-      please provide a 'log_filter' file to filter the logs.
+      'log_filter' file is either not present or cannot be compiled.
       """
 
   Scenario: Static binary
