@@ -9,4 +9,4 @@ Logtee executes a child program. The latter writes the logs to stdout of the par
 
 ## Usage
 - start mongodb with ```docker-compose up``` 
-- write the data of your child program (in this example '{}') to stdout and to mongodb ```src/logtee.d --forwarder features/support/mongo/forward -- echo {}```.
+- write the data produced by your child program (in this example '{}') to stdout and to mongodb ```src/logtee.d --forwarder features/support/mongo/forward -- echo {}```.
