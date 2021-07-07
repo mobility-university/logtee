@@ -10,11 +10,12 @@ import core.stdc.signal : signal, SIGTERM;
 
 /**
   TODO:
-  mongo?
   pv
   github workflow
   stderr
   stdin an Program weiterleiten
+  README
+  diagram
 */
 
 void onLine(T)(T line, File forwarder)
