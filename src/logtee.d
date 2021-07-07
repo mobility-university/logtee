@@ -1,75 +1,68 @@
 #!/usr/bin/env rdmd
-import std.stdio;
+import std.stdio : File, stdout, write, writeln;
 import std.getopt;
 import core.time : dur;
 import std.process : Redirect, pipeProcess, wait, Pid;
-import std.datetime;
-import std.array;
-import std.string;
-import core.stdc.signal : signal, SIGTERM, SIGSEGV, SIGINT, SIGILL, SIGFPE, SIGABRT;
-
-//import core.sys.posix.signal : kill;
+import std.datetime : Clock;
+import std.string : empty, split, startsWith;
+import std.json : parseJSON, JSONValue;
+import core.stdc.signal : signal, SIGTERM;
 
 /**
   TODO:
-  forward sigterm
-  ldc2 - static binary
-  mongo?
   pv
   github workflow
   stderr
   stdin an Program weiterleiten
-
+  README
+  diagram
 */
 
-void onLine(T)(T line)
+void onLine(T)(T line, File forwarder)
 {
-    if (line.startsWith('{'))
+    if (!line.startsWith('{'))
     {
-        import std.json;
-
-
-        static if(__traits(compiles, foo)) {
-            import user_specific: onLineJson;
-            auto json = line.parseJSON;
-            //json
-            //static assert (compiles(onLineJson(json))) + Hilfe
-            onLineJson(json);
-        }
-        
-        
-        
-       
+        return;
     }
+
+    static if (!__traits(compiles, import("log_filter")))
+    {
+        pragma(msg, "'log_filter' file is either not present or cannot be compiled.");
+        static assert(false, "no customized filter defined");
+    }
+    auto json = line.parseJSON;
+    mixin(import("log_filter"));
 }
 
 __gshared int childPid = 0;
+__gshared int forwarderPid = 0;
 
-extern (C) void handler(int num) nothrow @nogc @system
+extern (C) void signalHandler(int num) nothrow @nogc @system
 {
-    printf("Caught signal %d\n", num);
-    assert(childPid != 0);
-    version (Posix)
+    foreach (pid; [childPid, forwarderPid])
     {
-        import core.sys.posix.signal : kill;
+        assert(pid != 0);
+        version (Posix)
+        {
+            import core.sys.posix.signal : kill;
 
-        childPid.kill(num);
-        // while (true) {}
-    }
-    else
-    {
-        static assert(false, "not supported");
+            pid.kill(num);
+        }
+        else
+        {
+            static assert(false, "not supported");
+        }
     }
 }
 
 int main(string[] args)
 {
     bool plotStart = false;
-    bool forward = false;
+    string forwardTo;
 
-    auto options = getopt(args, "plotStart", &plotStart, "forward", &forward);
+    auto options = getopt(args, "plotStart", &plotStart, std.getopt.config.required,
+            "forwarder", "where to forward filtered events to", &forwardTo);
     string[] extraArgs = args[1 .. $];
-    string extraArgs2;
 
     if (options.helpWanted || extraArgs.empty)
     {
@@ -82,29 +75,22 @@ int main(string[] args)
         stdout.writefln!`{"timestamp": "%s", "message": "start"}`(Clock.currTime().toISOExtString);
     }
 
-    if (forward) {
-        extraArgs2 = extraArgs[0];
-        writeln(extraArgs2);
-        auto forwarder = pipeProcess(extraArgs2, Redirect.stdout | Redirect.stderrToStdout);
-        childPid = forwarder.pid.processID;
-    }
-    extraArgs = extraArgs[1 .. $];
-    writeln(extraArgs);
+    auto child = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
+    childPid = child.pid.processID;
 
-    auto pipes = pipeProcess(extraArgs, Redirect.stdout | Redirect.stderrToStdout);
-    childPid = pipes.pid.processID;
+    auto forwarder = pipeProcess(forwardTo.split(' '), Redirect.stdin);
+    forwarderPid = forwarder.pid.processID;
 
+    SIGTERM.signal(&signalHandler);
 
-    signal(SIGTERM, &handler);
-
-    foreach (line; pipes.stdout.byLineCopy)
+    foreach (line; child.stdout.byLineCopy)
     {
         stdout.write(line);
-        onLine(line);
+        onLine(line, forwarder.stdin);
     }
-    return pipes.pid.wait;
+    return child.pid.wait;
     scope (exit)
     {
-        pipes.pid.wait;
+        child.pid.wait;
     }
 }

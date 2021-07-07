@@ -1,6 +1,6 @@
 Feature: Docker
 
-  Scenario:
+  Scenario: Usage
     Given a dockerfile stage with
       """
       FROM dlanguage/dmd
@@ -10,30 +10,41 @@ Feature: Docker
       RUN dmd logtee.d
       """
     When building the docker image
+    Then it fails with
+      """
+      'log_filter' file is either not present or cannot be compiled.
+      """
+
+  Scenario: Static binary
+    Given a customized logging filter is configured like
+      """
+      forwarder.writeln("customized");
+      """
+    Given a dockerfile stage with
+      """
+      FROM dlanguage/ldc
+
+      COPY src/ /work
+      COPY log_filter /work
+      WORKDIR /work
+      RUN ldc2 logtee.d -J. -static
+      """
+    When building the docker image
     Then there is a binary under /work/logtee
 
-  Scenario: Data Ingestion
-    Given a user specific logging
+  Scenario: Log filter
+    Given a customized logging filter is configured like
       """
-      import std.json;
-      import std.stdio;
-      void onLineJson(JSONValue value) {
-        stdout.writeln("huhu");
-      }
+      forwarder.writeln("customized");
       """
-    And a dockerfile stage with
+    Given a dockerfile stage with
       """
       FROM dlanguage/dmd
 
       COPY src/ /work
-      COPY user_specific.d /work
+      COPY log_filter /work
       WORKDIR /work
-      RUN dmd logtee.d user_specific.d
+      RUN dmd -J. logtee.d -oflogtee
       """
     When building the docker image
     Then there is a binary under /work/logtee
-    When I start "/work/logtee -- echo {}"
-    Then I get
-      """
-      {}huhu
-      """
