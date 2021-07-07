@@ -1,75 +1,38 @@
 @startuml
-component Logtee {
+
 () "stdin" as stdin_logtee
-stdin_logtee - Logtee
+stdin_logtee -right- Logtee
 () "stdout" as stdout_logtee
-stdout_logtee - Logtee
+stdout_logtee -left- Logtee
 () "stderr" as stderr_logtee
-stderr_logtee - Logtee
+stderr_logtee -up- Logtee
 
-   component "child" {
+component Logtee {
     () "stdin" as stdin_child
-    stdin_child - child
+    stdin_child -right- child
     () "stdout" as stdout_child
-    stdout_child - child
+    stdout_child -left- child
     () "stderr" as stderr_child
-    stderr_child - child
-}
+    stderr_child -up- child
 
-   component "forwarder" {
     () "stdin" as stdin_forwarder
-    stdin_forwarder - forwarder
+    stdin_forwarder -right- forwarder
     () "stdout" as stdout_forwarder
-    stdout_forwarder - forwarder
+    stdout_forwarder -left- forwarder
     () "stderr" as stderr_forwarder
-    stderr_forwarder - forwarder
+    stderr_forwarder -up- forwarder
+
+    stdin_logtee -> stdin_child
+    stdout_child -> stdout_logtee
+    stdout_child -> stdin_forwarder
+    stderr_child -> stderr_logtee
+    stderr_forwarder -> stderr_logtee
+
+    component "child" {
+    }
+
+    component "forwarder" {
+    }
+
 }
-
-stdin_logtee ..> stdin_child
-stdout_child ..> stdout_logtee
-stdout_child ..> stdin_forwarder
-stderr_child ..> stderr_logtee
-stderr_forwarder ..> stderr_logtee
-}
-@enduml
-
-@startuml
-ditaa
-
-              +---------------------------------------------------------------------------------------------------------------------------+
-              |                                                                                                                           |
-              |                                                          logtee                                                           |
-              |                                                                                                                           |
-              |                                                                                                                    +------+--------------+
-              |                                                                                                                    |                     |
-              |                                                    +-------------------------------------------------------------->|                     |
-              |                                                    |                                                               |            stdout   |
-              |                                                    |                                                               |                     |
-              |                                                    |                                                               |                cGRE |
-              |                                                    |                                                               +------+--------------+
-              |                   +---------------------------+    |                 +---------------------------+                        |
-              |                   |                           |    |                 |                           |                        |
-              |                   |           child           |    |                 |         forwarder         |                        |
-              |                   |                      +----+----+--+              |                      +----+-----=-+                |
-              |                   |                      |            |              |                      |            |                |
-+-------------+-------+           |                      |     stdout |              |                      |     stdout  X               |
-|                     |   +-------+----+                 |       cGRE |              |                      |       cGRE |                |
-|                     |   |            |                 +----+----+--+      +-------+----+                 +----+-----=-+                |
-|  stdin              +-->| stdin      |                      |    |         |            |                      |                        |
-|                     |   |       cBLU |                      |    +-------->| stdin      |                      |                        |
-|                cBLU |   +-------+----+                      |              |       cBLU |                      |                        |
-+-------------+-------+           |                           |              +-------+----+                      |                        |
-              |                   |                      +----+-------+              |                      +----+-------+                |
-              |                   |                      |            |              |                      |            |                |
-              |                   |                      |     stderr |              |                      |     stderr |                |
-              |                   |                      |       cRED |              |                      |       cRED |         +------+--------------+
-              |                   |                      +----+----+--+              |                      +----+----+--+         |                     |
-              |                   |                      c888 |    |                 |                      c888 |    |            |                     |
-              |                   +---------------------------+    |                 +---------------------------+    +----------->|            stderr   |
-              |                                                    |                                                               |                     |
-              |                                                    +-------------------------------------------------------------->|                cRED |
-              |                                                                                                                    +------+--------------+
-              |                                                                                                                     cFFF  |
-              +---------------------------------------------------------------------------------------------------------------------------+
-
 @enduml
