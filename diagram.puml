@@ -1,4 +1,39 @@
 @startuml
+component Logtee {
+() "stdin" as stdin_logtee
+stdin_logtee - Logtee
+() "stdout" as stdout_logtee
+stdout_logtee - Logtee
+() "stderr" as stderr_logtee
+stderr_logtee - Logtee
+
+   component "child" {
+    () "stdin" as stdin_child
+    stdin_child - child
+    () "stdout" as stdout_child
+    stdout_child - child
+    () "stderr" as stderr_child
+    stderr_child - child
+}
+
+   component "forwarder" {
+    () "stdin" as stdin_forwarder
+    stdin_forwarder - forwarder
+    () "stdout" as stdout_forwarder
+    stdout_forwarder - forwarder
+    () "stderr" as stderr_forwarder
+    stderr_forwarder - forwarder
+}
+
+stdin_logtee ..> stdin_child
+stdout_child ..> stdout_logtee
+stdout_child ..> stdin_forwarder
+stderr_child ..> stderr_logtee
+stderr_forwarder ..> stderr_logtee
+}
+@enduml
+
+@startuml
 ditaa
 
               +---------------------------------------------------------------------------------------------------------------------------+
