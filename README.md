@@ -5,8 +5,23 @@ A program which writes data produced by its child program to stdout and forwards
 We want to forward the logs which are produced by a service to logstash and to mongodb as well. 
 
 ## How it works
-Logtee executes a child program. The latter writes the logs to stdout of the parent program (logtee). At the same time, the logs are being filtered and consumed by another child program (forwarder), which ingests them into mongodb.
+Logtee executes a child program and intercepts the stdout of the child.
+Furthermore, it redirects it to stdout of the parent (logtee) and to a provided custom filter method.
+The latter should be located in the support directory and manipulates the intercepted data.
+The manipulated data is forwarded to the stdin of the forwarder which should be provided in the support directory as well.
+Needed input for the child program can be given through the stdin of the logtee.
+The stderr of the child and forwarder are redirected to stderr of the parent.
+---
+TODO:
+- stdin to stdin geht noch nicht
+- stderrs nicht zu stderr verbunden
+- Forwarder oder forward? Datei umbenennen?
+---
 
 ## Usage
-- start mongodb with ```docker-compose up``` 
+### General
+```rdmd -Jfeatures/support src/logtee.d --forwarder features/support/forward -- executable-child-program```.
+### Mongo
+- start mongodb
+- provide forward
 - write the data of your child program (in this example '{}') to stdout and to mongodb ```src/logtee.d --forwarder features/support/mongo/forward -- echo {}```.
