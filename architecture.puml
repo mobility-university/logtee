@@ -24,7 +24,7 @@ component Logtee {
 
     stdin_logtee -> stdin_child
     stdout_child -> stdout_logtee
-    stdout_child -> stdin_forwarder
+    stdout_child -> stdin_forwarder : log_filter
     stderr_child -> stderr_logtee
     stderr_forwarder -> stderr_logtee
 
