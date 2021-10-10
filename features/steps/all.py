@@ -1,7 +1,7 @@
-from behave import given, then, when
-from subprocess import run, Popen, check_call, check_output, PIPE, TimeoutExpired
 import re
 from signal import SIGTERM, SIGKILL
+from subprocess import run, Popen, check_call, check_output, PIPE, TimeoutExpired
+from behave import given, then, when  # pylint: disable=no-name-in-module
 
 
 IMAGE = "logtee_test"
@@ -9,24 +9,25 @@ IMAGE = "logtee_test"
 
 @given("a dockerfile stage with")
 def define_dockerfile(context):
-    with open("build/Dockerfile", "w") as file:
+    with open("build/Dockerfile", "w", encoding='utf-8') as file:
         file.write(context.text)
 
 
-@given('"{process}" is started')
-def start_process(context, process):
+@given('"{command}" is started')
+def start_process(context, command):
 
-    context.process = Popen(process.split(" "), stdout=PIPE)
-    try:
-        context.process.wait(timeout=0.5)
-    except TimeoutExpired:
-        ...
-    assert context.process.returncode is None, context.process.returncode
+    with Popen(command.split(" "), stdout=PIPE) as process:
+        context.process = process
+        try:
+            process.wait(timeout=0.5)
+        except TimeoutExpired:
+            ...
+        assert process.returncode is None, process.returncode
 
 
 @given("a customized logging filter is configured like")
 def write_customized_logging(context):
-    with open("build/log_filter", "w") as file:
+    with open("build/log_filter", "w", encoding='utf-8') as file:
         file.write(context.text)
 
 @given("I started the mongo db")
@@ -39,12 +40,11 @@ def building_image(context):
         ["docker", "build", f"--tag={IMAGE}", "--quiet", "build"], capture_output=True
     )
 
-
 @when('I start "{command}"')
 def run_command(context, command):
     try:
         context.output = check_output(command.split(" ")).decode("utf-8")
-    except Exception as exception:
+    except Exception as exception:  # pylint: disable=broad-except
         context.output = exception
 
 
@@ -63,7 +63,7 @@ def assert_stops(context):
 
 
 @then("there is a binary under {path}")
-def check_binary(context, path):
+def check_binary(_context, path):
     check_call(["docker", "run", "--rm", "-ti", IMAGE, "which", path])
 
 
@@ -76,7 +76,7 @@ def assert_output(context):
 
 @then("the following gets forwarded")
 def assert_forward_output(context):
-    with open('build/log_filter.out', 'r') as file:
+    with open('build/log_filter.out', 'r', encoding='utf-8') as file:
         actual = file.read().strip("\n").strip("\r")
     expected = context.text.strip("\n").strip("\r")
     assert re.match(expected, actual), f"'{expected}' != '{actual}'"
