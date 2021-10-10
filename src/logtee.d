@@ -30,7 +30,7 @@ void onLine(T)(T line, File forwarder)
         pragma(msg, "'log_filter' file is either not present or cannot be compiled.");
         static assert(false, "no customized filter defined");
     }
-    auto json = line.parseJSON;
+    const json = line.parseJSON;
     mixin(import("log_filter"));
 }
 
