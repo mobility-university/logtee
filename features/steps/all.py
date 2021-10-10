@@ -16,13 +16,12 @@ def define_dockerfile(context):
 @given('"{command}" is started')
 def start_process(context, command):
 
-    with Popen(command.split(" "), stdout=PIPE) as process:
-        context.process = process
-        try:
-            process.wait(timeout=0.5)
-        except TimeoutExpired:
-            ...
-        assert process.returncode is None, process.returncode
+    context.process = Popen(command.split(" "), stdout=PIPE)
+    try:
+        context.process.wait(timeout=0.5)
+    except TimeoutExpired:
+        ...
+    assert context.process.returncode is None, context.process.returncode
 
 
 @given("a customized logging filter is configured like")
