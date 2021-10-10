@@ -9,7 +9,7 @@ IMAGE = "logtee_test"
 
 @given("a dockerfile stage with")
 def define_dockerfile(context):
-    with open("build/Dockerfile", "w", encoding='utf-8') as file:
+    with open("build/Dockerfile", "w", encoding="utf-8") as file:
         file.write(context.text)
 
 
@@ -27,18 +27,21 @@ def start_process(context, command):
 
 @given("a customized logging filter is configured like")
 def write_customized_logging(context):
-    with open("build/log_filter", "w", encoding='utf-8') as file:
+    with open("build/log_filter", "w", encoding="utf-8") as file:
         file.write(context.text)
+
 
 @given("I started the mongo db")
 def start_mongo(_):
     check_call(["sh", "-c", "docker-compose down; docker-compose up -d"])
+
 
 @when("building the docker image")
 def building_image(context):
     context.output = run(
         ["docker", "build", f"--tag={IMAGE}", "--quiet", "build"], capture_output=True
     )
+
 
 @when('I start "{command}"')
 def run_command(context, command):
@@ -76,7 +79,7 @@ def assert_output(context):
 
 @then("the following gets forwarded")
 def assert_forward_output(context):
-    with open('build/log_filter.out', 'r', encoding='utf-8') as file:
+    with open("build/log_filter.out", "r", encoding="utf-8") as file:
         actual = file.read().strip("\n").strip("\r")
     expected = context.text.strip("\n").strip("\r")
     assert re.match(expected, actual), f"'{expected}' != '{actual}'"
@@ -90,8 +93,22 @@ def assert_exception(context):
 @then("it fails with")
 def assert_fails_with(context):
     assert context.output.returncode != 0
-    assert context.text in context.output.stderr.decode("utf-8"), context.output.stderr.decode("utf-8")
+    assert context.text in context.output.stderr.decode(
+        "utf-8"
+    ), context.output.stderr.decode("utf-8")
+
 
 @then("the line is inserted into mongo")
 def assert_insert_into_mongo(_):
-    check_call(["docker", "exec", "mongodb", "mongo", "journaling", "--quiet", "--eval", "assert(db.collection.count({'key':'value'}) == 1)"])
+    check_call(
+        [
+            "docker",
+            "exec",
+            "mongodb",
+            "mongo",
+            "journaling",
+            "--quiet",
+            "--eval",
+            "assert(db.collection.count({'key':'value'}) == 1)",
+        ]
+    )
