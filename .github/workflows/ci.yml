@@ -1,0 +1,38 @@
+name: ci
+on:
+  pull_request:
+    paths:
+    - '**'
+  push:
+    branches:
+    - master
+    paths:
+    - '**'
+jobs:
+  ci:
+    name: CI
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Done
+        run: exit 0
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Install D
+      run: |
+        sudo wget https://netcologne.dl.sourceforge.net/project/d-apt/files/d-apt.list -O /etc/apt/sources.list.d/d-apt.list
+        sudo apt-get update --allow-insecure-repositories
+        sudo apt-get -y --allow-unauthenticated install --reinstall d-apt-keyring
+        sudo apt-get update && sudo apt-get install dmd-compiler dub
+    - run: behave
