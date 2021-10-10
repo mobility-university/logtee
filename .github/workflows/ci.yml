@@ -1,0 +1,28 @@
+name: ci
+on:
+  pull_request:
+    paths:
+    - '**'
+  push:
+    branches:
+    - master
+    paths:
+    - '**'
+jobs:
+  ci:
+    name: CI
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Done
+        run: exit 0
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - run: behave
