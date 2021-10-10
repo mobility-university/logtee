@@ -1,24 +1,32 @@
 # Logtee
-A program which writes data produced by its child program to stdout and forwards it to another service at the same time. 
+
+A program which forwards stdout from a child and applies custom forward logic. 
 
 ## Motivation 
-We want to forward the logs which are produced by a service to logstash and to mongodb as well. 
+
+Intercepting logs can be difficult. Full blown solutions like k8s services meshes exists. We aimed for a simple solution.
 
 ## How it works
 ![architecture](architecture.png?raw=true "Architecture")
+
 Logtee executes a child program and intercepts the stdout of the child.
-After that, it redirects it to stdout of the parent (logtee) and to a provided custom filter method. The latter is located under ```/support``` and manipulates the intercepted data. The manipulated data is forwarded to the stdin of the forwarder which is located under ```/support``` as well. Needed input for the child program can be provided through the stdin of the logtee. The stderr of the child and forwarder are redirected to stderr of the parent.
+It redirects the stdout of the parent (logtee) and applies custom forward logic.
+Forward logic could be filtering specific events.
 
 ## Usage
+
 ### General
+
 ```rdmd -Jfeatures/support src/logtee.d --forwarder features/support/forward -- executable-child-program```.
+
 ### Mongo
+
 - start mongodb
 - provide forward
-- write the data of your child program (in this example '{}') to stdout and to mongodb ```src/logtee.d --forwarder features/support/mongo/forward -- echo {}```.
-
+- write the data of your child program (in this example '{}') to stdout and to mongodb
+  ```src/logtee.d --forwarder features/support/mongo/forward -- echo {}```.
 
 ## TODO
-- stdin to stdin geht noch nicht
-- stderrs nicht zu stderr verbunden
-- Forwarder oder forward? Datei umbenennen?
+
+- forward stdin
+- connect stderr
